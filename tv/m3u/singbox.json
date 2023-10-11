@@ -1,43 +1,156 @@
 {
   "log": {
-    "disabled": false,
-    "level": "info",
+    "disabled": false,  
+    "level": "warn",
     "timestamp": true
   },
-  "route": {
+  "dns": {
+    "servers": [
+      {
+        "tag": "dns_proxy",
+        "address": "https://1.1.1.1/dns-query",
+        "address_resolver": "dns_local",
+        "strategy": "ipv4_only",
+        "detour": "select"
+      },
+      {
+        "tag": "dns_direct",
+        "address": "https://dns.alidns.com/dns-query",
+        "address_resolver": "dns_local",
+        "strategy": "ipv4_only",
+        "detour": "direct"
+      },
+      {
+        "tag": "dns_local",
+        "address": "223.5.5.5",
+        "detour": "direct"
+      },
+      {
+        "tag": "dns_block",
+        "address": "rcode://success"
+      }
+    ],
     "rules": [
       {
-        "inbound": ["kq07juy9-in"],
-        "outbound": "direct"
+        "outbound": "any",
+        "server": "dns_local"
+      },
+      {
+        "geosite": "category-ads-all",
+        "server": "dns_block",
+        "disable_cache": true
+      },
+      {
+        "geosite": [
+          "cn",
+          "private"
+        ],
+        "server": "dns_direct"
       }
     ]
   },
+  "route": {
+    "geoip": {
+      "download_url": "https://github.com/soffchen/sing-geoip/releases/latest/download/geoip.db",
+      "download_detour": "select"
+    },
+    "geosite": {
+      "download_url": "https://github.com/soffchen/sing-geosite/releases/latest/download/geosite.db",
+      "download_detour": "select"
+    },
+    "rules": [
+      {
+        "protocol": "dns",
+        "outbound": "dns-out"
+      },
+      {
+        "geosite": "category-ads-all",
+        "outbound": "block"
+      },
+      {
+        "geosite": "cn",
+        "geoip": [
+          "cn",
+          "private"
+        ],
+        "outbound": "direct"
+      }
+    ],
+    "auto_detect_interface": true
+  },
   "inbounds": [
     {
-      "type": "naive",
-      "tag": "kq07juy9-in",
-      "listen": "::",
-      "listen_port": 443,
+      "type": "tun",
+      "tag": "tun-in",
+      "inet4_address": "172.19.0.1/30",
+      "inet6_address": "fdfe:dcba:9876::1/126",
+      "mtu": 1400,
+      "auto_route": true,
+      "strict_route": true,
+      "stack": "gvisor",
       "sniff": true,
-      "sniff_override_destination": true,
-      "users": [
-        {
-          "username": "fjgbm+wp",
-          "password": "Nhi0YFHYZ6tT"
-        }
-      ],
-      "tls": {
-        "enabled": true,
-        "server_name": "jp.215100.xyz",
-        "certificate_path": "/etc/ssl/private/jp.215100.xyz.crt",
-        "key_path": "/etc/ssl/private/jp.215100.xyz.key"
-      }
+      "sniff_override_destination": false
     }
   ],
   "outbounds": [
     {
+      "type": "tuic",
+      "tag": "tuic-2956",
+      "server": "jp.215100.xyz", 
+      "server_port": 443,
+      "uuid": "862daa04-4371-4ba7-bb93-d81590a942b7", 
+      "password": "kDKrBcZO9xe2", 
+      "congestion_control": "bbr",
+      "udp_relay_mode": "native",
+      "zero_rtt_handshake": false,
+      "heartbeat": "10s",
+      "tls": {
+        "enabled": true,
+        "server_name": "jp.215100.xyz", 
+        "alpn": [
+          "h3"
+        ]
+      }
+    },
+    {
+      "type": "urltest",
+      "tag": "auto",
+      "outbounds": [
+        "tuic-2956"
+      ],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50,
+      "interrupt_exist_connections": false
+    },
+    {
+      "type": "selector",
+      "tag": "select",
+      "outbounds": [
+        "tuic-2956", 
+        "auto"
+      ],
+      "default": "auto",
+      "interrupt_exist_connections": false
+    },
+    {
       "type": "direct",
       "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    },
+    {
+      "type": "dns",
+      "tag": "dns-out"
     }
-  ]
+  ],
+  "ntp": {
+    "enabled": true,
+    "server": "time.apple.com",
+    "server_port": 123,
+    "interval": "30m",
+    "detour": "direct"
+  }
 }
