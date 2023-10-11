@@ -1,158 +1,43 @@
 {
   "log": {
-    "disabled": false,  
-    "level": "warn",
+    "disabled": false,
+    "level": "info",
     "timestamp": true
   },
-  "dns": {
-    "servers": [
-      {
-        "tag": "dns_proxy",
-        "address": "https://1.1.1.1/dns-query",
-        "address_resolver": "dns_local",
-        "strategy": "ipv4_only",
-        "detour": "select"
-      },
-      {
-        "tag": "dns_direct",
-        "address": "https://dns.alidns.com/dns-query",
-        "address_resolver": "dns_local",
-        "strategy": "ipv4_only",
-        "detour": "direct"
-      },
-      {
-        "tag": "dns_local",
-        "address": "223.5.5.5",
-        "detour": "direct"
-      },
-      {
-        "tag": "dns_block",
-        "address": "rcode://success"
-      }
-    ],
+  "route": {
     "rules": [
       {
-        "outbound": "any",
-        "server": "dns_local"
-      },
-      {
-        "geosite": "category-ads-all",
-        "server": "dns_block",
-        "disable_cache": true
-      },
-      {
-        "geosite": [
-          "cn",
-          "private"
-        ],
-        "server": "dns_direct"
+        "inbound": ["kq07juy9-in"],
+        "outbound": "direct"
       }
     ]
   },
-  "route": {
-    "geoip": {
-      "download_url": "https://github.com/soffchen/sing-geoip/releases/latest/download/geoip.db",
-      "download_detour": "select"
-    },
-    "geosite": {
-      "download_url": "https://github.com/soffchen/sing-geosite/releases/latest/download/geosite.db",
-      "download_detour": "select"
-    },
-    "rules": [
-      {
-        "protocol": "dns",
-        "outbound": "dns-out"
-      },
-      {
-        "geosite": "category-ads-all",
-        "outbound": "block"
-      },
-      {
-        "geosite": "cn",
-        "geoip": [
-          "cn",
-          "private"
-        ],
-        "outbound": "direct"
-      }
-    ],
-    "auto_detect_interface": true
-  },
   "inbounds": [
     {
-      "type": "tun",
-      "tag": "tun-in",
-      "inet4_address": "172.19.0.1/30",
-      "inet6_address": "fdfe:dcba:9876::1/126",
-      "mtu": 1400,
-      "auto_route": true,
-      "strict_route": true,
-      "stack": "gvisor",
+      "type": "naive",
+      "tag": "kq07juy9-in",
+      "listen": "::",
+      "listen_port": 443,
       "sniff": true,
-      "sniff_override_destination": false
+      "sniff_override_destination": true,
+      "users": [
+        {
+          "username": "fjgbm+wp",
+          "password": "Nhi0YFHYZ6tT"
+        }
+      ],
+      "tls": {
+        "enabled": true,
+        "server_name": "jp.215100.xyz",
+        "certificate_path": "/etc/ssl/private/jp.215100.xyz.crt",
+        "key_path": "/etc/ssl/private/jp.215100.xyz.key"
+      }
     }
   ],
   "outbounds": [
     {
-      "type": "vless",
-      "tag": "vless-8676",
-      "server": "206.190.236.115", 
-      "server_port": 443,
-      "uuid": "79ec54c3-e470-4b23-8e0b-3cf83ae9f517", 
-      "flow": "xtls-rprx-vision",
-      "tls": {
-        "enabled": true,
-        "server_name": "www.nvidia.com", 
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        },
-        "reality": {
-          "enabled": true,
-          "public_key": "XI5DFkxWJX9_FfwrbNqwH07oNc42oXz5fvHKx5R-amk",
-          "short_id": "b471990bd2ae480c"
-        }
-      }
-    },
-    {
-      "type": "urltest",
-      "tag": "auto",
-      "outbounds": [
-        "vless-8676"
-      ],
-      "url": "https://www.gstatic.com/generate_204",
-      "interval": "1m",
-      "tolerance": 50,
-      "interrupt_exist_connections": false
-    },
-    {
-      "type": "selector",
-      "tag": "select",
-      "outbounds": [
-        "vless-8676", 
-        "auto"
-      ],
-      "default": "auto",
-      "interrupt_exist_connections": false
-    },
-    {
       "type": "direct",
       "tag": "direct"
-    },
-    {
-      "type": "block",
-      "tag": "block"
-    },
-    {
-      "type": "dns",
-      "tag": "dns-out"
     }
-  ],
-  "ntp": {
-    "enabled": true,
-    "server": "time.apple.com",
-    "server_port": 123,
-    "interval": "30m",
-    "detour": "direct"
-  }
+  ]
 }
